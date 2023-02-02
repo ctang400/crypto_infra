@@ -1,0 +1,3 @@
+[submodule "libstone"]
+	path = libstone
+	url = git@github.com:ctang400/libstone.git
