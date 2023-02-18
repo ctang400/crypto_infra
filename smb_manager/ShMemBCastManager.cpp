@@ -17,7 +17,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
 namespace {
 // Documented, but not implemented in glibc yet
 mode_t _getumask(void) {
@@ -25,12 +24,12 @@ mode_t _getumask(void) {
   umask(mask);
   return mask;
 }
-}
+} // namespace
 
 const struct timeval ShMemBCastManager::Client::TIMEOUT = {1 * 60, 0};
 
-const char * const ShMemBCastManager::LOG_TIME_FORMAT = "%F %T";
-const char * const ShMemBCastManager::LOG_TIME_ERROR = "UNKNOWN TIME";
+const char *const ShMemBCastManager::LOG_TIME_FORMAT = "%F %T";
+const char *const ShMemBCastManager::LOG_TIME_ERROR = "UNKNOWN TIME";
 
 int ShMemBCastManager::Client::sendApprovalDenialMessage(bool approval) {
   if (approval) {
@@ -68,7 +67,7 @@ int ShMemBCastManager::Client::sendApprovalDenialMessage(bool approval) {
  * Event Mode is unsupported for now
  */
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::EventModeRequest* request) {
+    Protocol::EventModeRequest *request) {
   m_eventMode = true;
 
   if (0 != sendApprovalDenialMessage(true)) {
@@ -79,7 +78,7 @@ int ShMemBCastManager::Client::handleMessage(
 }
 
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::NoEventModeRequest* request) {
+    Protocol::NoEventModeRequest *request) {
   m_eventMode = false;
 
   if (0 != sendApprovalDenialMessage(true)) {
@@ -90,10 +89,10 @@ int ShMemBCastManager::Client::handleMessage(
 }
 
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::WriterSubscribeRequest* request) {
+    Protocol::WriterSubscribeRequest *request) {
   // variables
   size_t channelNameLength;
-  Channel* channel;
+  Channel *channel;
   int retVal = 0;
 
   // nul-terminate the request
@@ -102,9 +101,7 @@ int ShMemBCastManager::Client::handleMessage(
   request->m_channelName[channelNameLength] = '\0';
 
   // add subscriber
-  channel = m_manager->subscribe(this,
-                                 request->m_channelName,
-                                 true,
+  channel = m_manager->subscribe(this, request->m_channelName, true,
                                  request->m_requestedSize);
   if (0 == channel) {
     goto SUBSCRIBE_ERROR;
@@ -117,12 +114,11 @@ int ShMemBCastManager::Client::handleMessage(
 
   try {
     m_subscriptions.push_back(subscription);
-  } catch (const std::bad_alloc& exception) {
+  } catch (const std::bad_alloc &exception) {
     // log this event
     m_manager->printLogPrefix();
     (*(m_manager->m_logStream)) << "Could not add new subscription to "
-                                << "subscription list"
-                                << std::endl;
+                                << "subscription list" << std::endl;
     goto PUSH_BACK_ERROR;
   }
 
@@ -132,57 +128,48 @@ int ShMemBCastManager::Client::handleMessage(
   }
 
   // send file descriptor
-  if (0 != UnixSocketUtil::sendFd(m_link.fileDescriptor(),
-                                         channel->m_fd)) {
+  if (0 != UnixSocketUtil::sendFd(m_link.fileDescriptor(), channel->m_fd)) {
     goto SEND_FD_ERROR;
   }
 
   // log the subscription
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " successfully subscribed to channel \""
-                              << request->m_channelName
-                              << "\" as a writer"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " successfully subscribed to channel \""
+      << request->m_channelName << "\" as a writer" << std::endl;
 
   return 0;
 
- SEND_FD_ERROR:
- SEND_APPROVAL_ERROR:
+SEND_FD_ERROR:
+SEND_APPROVAL_ERROR:
   retVal = -1;
 
- PUSH_BACK_ERROR:
+PUSH_BACK_ERROR:
   if ((0 == retVal) &&
-      (0 != m_manager->unsubscribe(this,
-                                   request->m_channelName,
-                                   true))) {
+      (0 != m_manager->unsubscribe(this, request->m_channelName, true))) {
     // huh?!
     retVal = -1;
   }
 
- SUBSCRIBE_ERROR:
+SUBSCRIBE_ERROR:
   if ((0 == retVal) && (0 != sendApprovalDenialMessage(false))) {
     retVal = -1;
   }
 
   // log the subscription attempt
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " failed to subscribe to channel \""
-                              << request->m_channelName
-                              << "\" as a writer"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " failed to subscribe to channel \""
+      << request->m_channelName << "\" as a writer" << std::endl;
 
   return retVal;
 }
 
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::ReaderSubscribeRequest* request) {
+    Protocol::ReaderSubscribeRequest *request) {
   // variables
   size_t channelNameLength;
-  Channel* channel;
+  Channel *channel;
   int retVal = 0;
 
   // nul-terminate the request
@@ -191,9 +178,7 @@ int ShMemBCastManager::Client::handleMessage(
   request->m_channelName[channelNameLength] = '\0';
 
   // add subscriber
-  channel = m_manager->subscribe(this,
-                                 request->m_channelName,
-                                 false,
+  channel = m_manager->subscribe(this, request->m_channelName, false,
                                  request->m_requestedSize);
   if (0 == channel) {
     goto SUBSCRIBE_ERROR;
@@ -206,12 +191,11 @@ int ShMemBCastManager::Client::handleMessage(
 
   try {
     m_subscriptions.push_back(subscription);
-  } catch (const std::bad_alloc& exception) {
+  } catch (const std::bad_alloc &exception) {
     // log this event
     m_manager->printLogPrefix();
     (*(m_manager->m_logStream)) << "Could not add new subscription to "
-                                << "subscription list"
-                                << std::endl;
+                                << "subscription list" << std::endl;
     goto PUSH_BACK_ERROR;
   }
 
@@ -221,55 +205,45 @@ int ShMemBCastManager::Client::handleMessage(
   }
 
   // send file descriptor
-  if (0 != UnixSocketUtil::sendFd(m_link.fileDescriptor(),
-                                         channel->m_fd)) {
+  if (0 != UnixSocketUtil::sendFd(m_link.fileDescriptor(), channel->m_fd)) {
     goto SEND_FD_ERROR;
   }
 
   // log the subscription attempt
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " successfully subscribed to channel \""
-                              << request->m_channelName
-                              << "\" as a reader"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " successfully subscribed to channel \""
+      << request->m_channelName << "\" as a reader" << std::endl;
 
   return 0;
 
- SEND_FD_ERROR:
- SEND_APPROVAL_ERROR:
+SEND_FD_ERROR:
+SEND_APPROVAL_ERROR:
   retVal = -1;
 
- PUSH_BACK_ERROR:
+PUSH_BACK_ERROR:
   if ((0 == retVal) &&
-      (0 != m_manager->unsubscribe(this,
-                                   request->m_channelName,
-                                   false))) {
+      (0 != m_manager->unsubscribe(this, request->m_channelName, false))) {
     // huh?!
     retVal = -1;
   }
 
- SUBSCRIBE_ERROR:
-  if ((0 == retVal) &&
-      (0 != sendApprovalDenialMessage(false))) {
+SUBSCRIBE_ERROR:
+  if ((0 == retVal) && (0 != sendApprovalDenialMessage(false))) {
     retVal = -1;
   }
 
   // log the subscription attempt
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " failed to subscribe to channel \""
-                              << request->m_channelName
-                              << "\" as a reader"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " failed to subscribe to channel \""
+      << request->m_channelName << "\" as a reader" << std::endl;
 
   return retVal;
 }
 
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::WriterUnsubscribeRequest* request) {
+    Protocol::WriterUnsubscribeRequest *request) {
   // variables
   size_t channelNameLength;
   std::list<Subscription>::iterator iter;
@@ -281,9 +255,7 @@ int ShMemBCastManager::Client::handleMessage(
   request->m_channelName[channelNameLength] = '\0';
 
   // find the subscription from list
-  for (iter = m_subscriptions.begin();
-       iter != m_subscriptions.end();
-       iter++) {
+  for (iter = m_subscriptions.begin(); iter != m_subscriptions.end(); iter++) {
     if (((*iter).m_writer) &&
         (0 == ::strcmp((*iter).m_channelName, request->m_channelName))) {
       // found!
@@ -311,39 +283,32 @@ int ShMemBCastManager::Client::handleMessage(
 
   // log event
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " successfully unsubscribed from channel \""
-                              << request->m_channelName
-                              << "\" as a writer"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " successfully unsubscribed from channel \""
+      << request->m_channelName << "\" as a writer" << std::endl;
 
   return 0;
 
- SEND_APPROVAL_ERROR:
+SEND_APPROVAL_ERROR:
   retVal = -1;
 
- UNSUBSCRIBE_ERROR:
-  if ((0 == retVal) &&
-      (0 != sendApprovalDenialMessage(false))) {
+UNSUBSCRIBE_ERROR:
+  if ((0 == retVal) && (0 != sendApprovalDenialMessage(false))) {
     retVal = -1;
   }
 
- NO_SUCH_SUBSCRIPTION_ERROR:
+NO_SUCH_SUBSCRIPTION_ERROR:
   // log unsubscription attempt
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " failed to unsubscribe from channel \""
-                              << request->m_channelName
-                              << "\" as a writer"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " failed to unsubscribe from channel \""
+      << request->m_channelName << "\" as a writer" << std::endl;
 
   return retVal;
 }
 
 int ShMemBCastManager::Client::handleMessage(
-    Protocol::ReaderUnsubscribeRequest* request) {
+    Protocol::ReaderUnsubscribeRequest *request) {
   // variables
   size_t channelNameLength;
   std::list<Subscription>::iterator iter;
@@ -355,9 +320,7 @@ int ShMemBCastManager::Client::handleMessage(
   request->m_channelName[channelNameLength] = '\0';
 
   // find the subscription in the list
-  for (iter = m_subscriptions.begin();
-       iter != m_subscriptions.end();
-       iter++) {
+  for (iter = m_subscriptions.begin(); iter != m_subscriptions.end(); iter++) {
     if ((!(*iter).m_writer) &&
         (0 == ::strcmp((*iter).m_channelName, request->m_channelName))) {
       // found!
@@ -385,43 +348,35 @@ int ShMemBCastManager::Client::handleMessage(
 
   // log event
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " successfully unsubscribed from channel \""
-                              << request->m_channelName
-                              << "\" as a reader"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " successfully unsubscribed from channel \""
+      << request->m_channelName << "\" as a reader" << std::endl;
 
   return 0;
 
- SEND_APPROVAL_ERROR:
+SEND_APPROVAL_ERROR:
   retVal = -1;
 
- UNSUBSCRIBE_ERROR:
-  if ((0 == retVal) &&
-      (0 != sendApprovalDenialMessage(false))) {
+UNSUBSCRIBE_ERROR:
+  if ((0 == retVal) && (0 != sendApprovalDenialMessage(false))) {
     retVal = -1;
   }
 
- NO_SUCH_SUBSCRIPTION_ERROR:
+NO_SUCH_SUBSCRIPTION_ERROR:
   // log event
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " failed to unsubscribe from channel \""
-                              << request->m_channelName
-                              << "\" as a reader"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " failed to unsubscribe from channel \""
+      << request->m_channelName << "\" as a reader" << std::endl;
 
   return retVal;
 }
 
-void
-ShMemBCastManager::Client::sendChannelSubscriptionEvent(uint16_t numReaders,
-                                                        const char* channel) {
+void ShMemBCastManager::Client::sendChannelSubscriptionEvent(
+    uint16_t numReaders, const char *channel) {
   // variables
   const size_t maxMessageSize = Protocol::Constants::MAX_MESSAGE_SIZE;
-  char* buffer;
+  char *buffer;
   ssize_t size;
 
   if (!m_eventMode) {
@@ -434,10 +389,8 @@ ShMemBCastManager::Client::sendChannelSubscriptionEvent(uint16_t numReaders,
     goto BUFFER_ALLOCATE_ERROR;
   }
 
-  size = Protocol::ChannelSubscriptionEvent::init(buffer,
-                                                  maxMessageSize,
-                                                  numReaders,
-                                                  channel);
+  size = Protocol::ChannelSubscriptionEvent::init(buffer, maxMessageSize,
+                                                  numReaders, channel);
   if (0 > size) {
     goto MESSAGE_INIT_ERROR;
   }
@@ -449,19 +402,19 @@ ShMemBCastManager::Client::sendChannelSubscriptionEvent(uint16_t numReaders,
   delete[] buffer;
   return;
 
- WRITE_ERROR:
+WRITE_ERROR:
   // not a fatal error, as it is just an event
- MESSAGE_INIT_ERROR:
+MESSAGE_INIT_ERROR:
   delete[] buffer;
 
- BUFFER_ALLOCATE_ERROR:
+BUFFER_ALLOCATE_ERROR:
   return;
 }
 
 int ShMemBCastManager::Client::onRead(void) {
   ssize_t bytesRead;
   char buffer[Protocol::Constants::MAX_MESSAGE_SIZE];
-  Protocol::Header* header;
+  Protocol::Header *header;
   int retVal;
 
   // read requestn
@@ -472,7 +425,7 @@ int ShMemBCastManager::Client::onRead(void) {
   }
 
   // verify protocol version
-  header = reinterpret_cast<Protocol::Header*>(buffer);
+  header = reinterpret_cast<Protocol::Header *>(buffer);
   if (Protocol::VERSION != header->m_version) {
     // unsupported version
     goto VERSION_ERROR;
@@ -485,39 +438,39 @@ int ShMemBCastManager::Client::onRead(void) {
 
   // work based on request type. Result in a channel data
   switch (header->m_messageType) {
-    case Protocol::EVENT_MODE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::EventModeRequest*>(buffer));
-    } break;
+  case Protocol::EVENT_MODE_REQUEST: {
+    retVal =
+        handleMessage(reinterpret_cast<Protocol::EventModeRequest *>(buffer));
+  } break;
 
-    case Protocol::NO_EVENT_MODE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::NoEventModeRequest*>(buffer));
-    } break;
+  case Protocol::NO_EVENT_MODE_REQUEST: {
+    retVal =
+        handleMessage(reinterpret_cast<Protocol::NoEventModeRequest *>(buffer));
+  } break;
 
-    case Protocol::WRITER_SUBSCRIBE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::WriterSubscribeRequest*>(buffer));
-    } break;
+  case Protocol::WRITER_SUBSCRIBE_REQUEST: {
+    retVal = handleMessage(
+        reinterpret_cast<Protocol::WriterSubscribeRequest *>(buffer));
+  } break;
 
-    case Protocol::READER_SUBSCRIBE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::ReaderSubscribeRequest*>(buffer));
-    } break;
+  case Protocol::READER_SUBSCRIBE_REQUEST: {
+    retVal = handleMessage(
+        reinterpret_cast<Protocol::ReaderSubscribeRequest *>(buffer));
+  } break;
 
-    case Protocol::WRITER_UNSUBSCRIBE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::WriterUnsubscribeRequest*>(buffer));
-    } break;
+  case Protocol::WRITER_UNSUBSCRIBE_REQUEST: {
+    retVal = handleMessage(
+        reinterpret_cast<Protocol::WriterUnsubscribeRequest *>(buffer));
+  } break;
 
-    case Protocol::READER_UNSUBSCRIBE_REQUEST: {
-      retVal = handleMessage(
-          reinterpret_cast<Protocol::ReaderUnsubscribeRequest*>(buffer));
-    } break;
+  case Protocol::READER_UNSUBSCRIBE_REQUEST: {
+    retVal = handleMessage(
+        reinterpret_cast<Protocol::ReaderUnsubscribeRequest *>(buffer));
+  } break;
 
-    default: {
-      goto UNSUPPORTED_MESSAGE_ERROR;
-    }
+  default: {
+    goto UNSUPPORTED_MESSAGE_ERROR;
+  }
   }
 
   if (0 == retVal) {
@@ -527,33 +480,27 @@ int ShMemBCastManager::Client::onRead(void) {
     return TTECH_DELETE_CHAN;
   }
 
- UNSUPPORTED_MESSAGE_ERROR:
- MESSAGE_SIZE_ERROR:
- VERSION_ERROR:
- READ_ERROR:
+UNSUPPORTED_MESSAGE_ERROR:
+MESSAGE_SIZE_ERROR:
+VERSION_ERROR:
+READ_ERROR:
   disconnect();
   return TTECH_DELETE_CHAN;
 }
 
 void ShMemBCastManager::Client::disconnect(void) {
   m_manager->printLogPrefix();
-  (*(m_manager->m_logStream)) << "Process "
-                              << m_pid
-                              << " disconnected"
-                              << std::endl;
+  (*(m_manager->m_logStream))
+      << "Process " << m_pid << " disconnected" << std::endl;
 
   for (std::list<Subscription>::iterator iter = m_subscriptions.begin();
-       iter != m_subscriptions.end();
-       iter++) {
+       iter != m_subscriptions.end(); iter++) {
     // log and unsubscribe
     m_manager->printLogPrefix();
-    (*(m_manager->m_logStream)) << "Process "
-                                << m_pid
-                                << " considered unsubscribed from channel \""
-                                << (*iter).m_channelName
-                                << "\" as a "
-                                << (((*iter).m_writer) ? ("writer") : ("reader"))
-                                << std::endl;
+    (*(m_manager->m_logStream))
+        << "Process " << m_pid << " considered unsubscribed from channel \""
+        << (*iter).m_channelName << "\" as a "
+        << (((*iter).m_writer) ? ("writer") : ("reader")) << std::endl;
 
     m_manager->unsubscribe(this, (*iter).m_channelName, (*iter).m_writer);
   }
@@ -562,15 +509,12 @@ void ShMemBCastManager::Client::disconnect(void) {
   m_link.close();
 }
 
-ShMemBCastManager::Channel*
-ShMemBCastManager::subscribe(Client* client,
-                             const char* channelName,
-                             bool writer,
-                             uint32_t requestedSize) {
+ShMemBCastManager::Channel *
+ShMemBCastManager::subscribe(Client *client, const char *channelName,
+                             bool writer, uint32_t requestedSize) {
   // search for existing channel
   for (std::list<Channel>::iterator iter = m_channels.begin();
-       iter != m_channels.end();
-       iter++) {
+       iter != m_channels.end(); iter++) {
     if (0 == ::strcmp(channelName, (*iter).m_name)) {
       // found an existing channel
       if (writer) {
@@ -586,9 +530,8 @@ ShMemBCastManager::subscribe(Client* client,
         (*iter).m_readers.push_back(client);
         if (0 != (*iter).m_writer) {
           // send a channel subscription event
-          (*iter).m_writer->
-              sendChannelSubscriptionEvent((*iter).m_readers.size(),
-                                           (*iter).m_name);
+          (*iter).m_writer->sendChannelSubscriptionEvent(
+              (*iter).m_readers.size(), (*iter).m_name);
         }
       }
 
@@ -600,8 +543,8 @@ ShMemBCastManager::subscribe(Client* client,
   DatagramBoard datagramBoard;
   int boardFd;
   uint64_t boardSize;
-  char* channelNameCopy;
-  Channel* channel;
+  char *channelNameCopy;
+  Channel *channel;
 
   // (1) create the board
   boardSize = (0 == requestedSize) ? (m_defaultBufferSize) : (requestedSize);
@@ -623,13 +566,11 @@ ShMemBCastManager::subscribe(Client* client,
   // add channel to list of channels
   try {
     m_channels.push_back(Channel());
-  } catch (const std::bad_alloc& exception) {
+  } catch (const std::bad_alloc &exception) {
     // log this event
     printLogPrefix();
-    (*m_logStream) << "Could not add new channel \""
-                   << channelNameCopy
-                   << "\" to channel list"
-                   << std::endl;
+    (*m_logStream) << "Could not add new channel \"" << channelNameCopy
+                   << "\" to channel list" << std::endl;
     goto PUSH_BACK_ERROR;
   }
 
@@ -646,32 +587,26 @@ ShMemBCastManager::subscribe(Client* client,
 
   // log this event
   printLogPrefix();
-  (*m_logStream) << "Created channel \""
-                 << channelNameCopy
-                 << "\" with size "
-                 << boardSize
-                 << " bytes"
-                 << std::endl;
+  (*m_logStream) << "Created channel \"" << channelNameCopy << "\" with size "
+                 << boardSize << " bytes" << std::endl;
 
   return channel;
 
- PUSH_BACK_ERROR:
+PUSH_BACK_ERROR:
   delete[] channelNameCopy;
 
- CHANNEL_NAME_ALLOCATION_ERROR:
+CHANNEL_NAME_ALLOCATION_ERROR:
   ::close(boardFd);
 
- DATAGRAMBOARD_CREATE_ERROR:
+DATAGRAMBOARD_CREATE_ERROR:
   return 0;
 }
 
-int ShMemBCastManager::unsubscribe(Client* client,
-                                   const char* channelName,
+int ShMemBCastManager::unsubscribe(Client *client, const char *channelName,
                                    bool writer) {
   // search for existing channel
   for (std::list<Channel>::iterator channelIter = m_channels.begin();
-       channelIter != m_channels.end();
-       channelIter++) {
+       channelIter != m_channels.end(); channelIter++) {
     if (0 == ::strcmp(channelName, (*channelIter).m_name)) {
       // found. Remove the subscription
       if (writer) {
@@ -683,10 +618,9 @@ int ShMemBCastManager::unsubscribe(Client* client,
         }
       } else {
         // remove a reader
-        std::list<Client*>::iterator clientIter;
+        std::list<Client *>::iterator clientIter;
         for (clientIter = (*channelIter).m_readers.begin();
-             clientIter != (*channelIter).m_readers.end();
-             clientIter++) {
+             clientIter != (*channelIter).m_readers.end(); clientIter++) {
           if ((*clientIter) == client) {
             // found reader
             break;
@@ -697,9 +631,9 @@ int ShMemBCastManager::unsubscribe(Client* client,
           (*channelIter).m_readers.erase(clientIter);
           if (0 != (*channelIter).m_writer) {
             // send a channel subscription event
-            (*channelIter).m_writer->
-                sendChannelSubscriptionEvent((*channelIter).m_readers.size(),
-                                             (*channelIter).m_name);
+            (*channelIter)
+                .m_writer->sendChannelSubscriptionEvent(
+                    (*channelIter).m_readers.size(), (*channelIter).m_name);
           }
         } else {
           // client does not have a read subscription to this channel
@@ -708,17 +642,14 @@ int ShMemBCastManager::unsubscribe(Client* client,
       }
 
       // delete channel if unsubscribed
-      if ((0 == (*channelIter).m_writer) &&
-          (*channelIter).m_readers.empty()) {
+      if ((0 == (*channelIter).m_writer) && (*channelIter).m_readers.empty()) {
         // need to delete the buffer for good
         // log this event
         printLogPrefix();
-        (*m_logStream) << "Destroyed channel \""
-                       << (*channelIter).m_name
-                       << "\""
-                       << std::endl;
+        (*m_logStream) << "Destroyed channel \"" << (*channelIter).m_name
+                       << "\"" << std::endl;
 
-        delete[] ((*channelIter).m_name);
+        delete[]((*channelIter).m_name);
         ::close((*channelIter).m_fd);
         m_channels.erase(channelIter);
       }
@@ -731,25 +662,24 @@ int ShMemBCastManager::unsubscribe(Client* client,
   return -1;
 }
 
-int ShMemBCastManager::init(const std::string& vlan,
-                            const std::set<uid_t>& permittedUIDSet,
-                            const std::set<gid_t>& permittedGIDSet,
+int ShMemBCastManager::init(const std::string &vlan,
+                            const std::set<uid_t> &permittedUIDSet,
+                            const std::set<gid_t> &permittedGIDSet,
                             uint64_t defaultBufferSize,
-                            const std::string& logFilePath) {
-  std::streambuf* streambuf;
-  const IPCAddress& managerAddress =
+                            const std::string &logFilePath) {
+  std::streambuf *streambuf;
+  const IPCAddress &managerAddress =
       ShMemBCastProtocol::getManagerIPCAddress(vlan);
   std::string managerSocketDir = managerAddress.peer();
-  int retVal;
+  int retVal = 0;
   struct sigaction sigaction;
 
   // (1) Set allowed uid and gid set
   try {
     m_permittedUIDSet = permittedUIDSet;
     m_permittedGIDSet = permittedGIDSet;
-  } catch (std::bad_alloc&) {
-    std::cerr << "Out of memory when copying permissions"
-              << std::endl;
+  } catch (std::bad_alloc &) {
+    std::cerr << "Out of memory when copying permissions" << std::endl;
     goto COPY_PERMISSIONS_ERROR;
   }
 
@@ -767,15 +697,13 @@ int ShMemBCastManager::init(const std::string& vlan,
     // std::cout << _getumask() << std::endl;
 
     if (0 != _getumask()) {
-       umask(0); // zero out the umask so that directories are created correctly
+      umask(0); // zero out the umask so that directories are created correctly
     }
 
     // create log file directory
     if (0 != FileUtil::mkdirpForFile(logFilePath.c_str(), 0777)) {
       std::cerr << "Could not create directory for default log file \""
-                << logFilePath
-                << "\""
-                << std::endl;
+                << logFilePath << "\"" << std::endl;
       goto MKDIRP_ERROR;
     }
 
@@ -789,12 +717,9 @@ int ShMemBCastManager::init(const std::string& vlan,
 
     // Create the file with the right permissions
     int fd = FileUtil::open(logFilePath.c_str(),
-                                   OpeningMode::CREATE_OR_TRUNCATE,
-                                   0666);
+                            OpeningMode::CREATE_OR_TRUNCATE, 0666);
     if (fd < 0) {
-      std::cerr << "Could not create the log file at \""
-                << logFilePath
-                << "\""
+      std::cerr << "Could not create the log file at \"" << logFilePath << "\""
                 << std::endl;
       goto LOG_FILE_OPEN_ERROR;
     } else {
@@ -804,9 +729,7 @@ int ShMemBCastManager::init(const std::string& vlan,
     // open the file
     m_logFile.open(logFilePath.c_str(), std::ios_base::out);
     if (!m_logFile.is_open()) {
-      std::cerr << "Could not open the log file at \""
-                << logFilePath
-                << "\""
+      std::cerr << "Could not open the log file at \"" << logFilePath << "\""
                 << std::endl;
       goto LOG_FILE_OPEN_ERROR;
     }
@@ -818,16 +741,15 @@ int ShMemBCastManager::init(const std::string& vlan,
   // create the output stream on the streambuf
   try {
     m_logStream = new std::ostream(streambuf);
-  } catch (std::bad_alloc&) {
-    std::cerr << "Out of memory when creating log stream"
-              << std::endl;
+  } catch (std::bad_alloc &) {
+    std::cerr << "Out of memory when creating log stream" << std::endl;
     goto CREATE_LOG_STREAM_ERROR;
   }
 
   // (4) open listening UDS
 
   // try to make the directory
-  if (managerSocketDir[managerSocketDir.size()-1] != '/') {
+  if (managerSocketDir[managerSocketDir.size() - 1] != '/') {
     // Need to make sure there is a trailing '/' or otherwise
     // tdefu::FileUtil::mkdirpForFile would ignore the last part of the path
     managerSocketDir += '/';
@@ -856,8 +778,7 @@ int ShMemBCastManager::init(const std::string& vlan,
 
   // (6) Add to dispatcher
   if (DispatcherBase::ON_READ !=
-      (retVal = m_dispatcher.addChannel(this,
-                                        DispatcherBase::ON_READ))) {
+      (retVal = m_dispatcher.addChannel(this, DispatcherBase::ON_READ))) {
     goto DISPATCHER_ERROR;
   }
 
@@ -865,8 +786,9 @@ int ShMemBCastManager::init(const std::string& vlan,
   printLogPrefix();
   (*m_logStream) << std::endl;
 
-  (*m_logStream) << "---------------------------------------------------------------"
-                 << std::endl;
+  (*m_logStream)
+      << "---------------------------------------------------------------"
+      << std::endl;
 
   (*m_logStream) << "Manager Started with Settings:" << std::endl;
   (*m_logStream) << "  VLAN                : " << vlan << std::endl;
@@ -899,27 +821,29 @@ int ShMemBCastManager::init(const std::string& vlan,
   }
   (*m_logStream) << std::endl;
 
-  (*m_logStream) << "  Default Buffer Size : " << m_defaultBufferSize << std::endl;
+  (*m_logStream) << "  Default Buffer Size : " << m_defaultBufferSize
+                 << std::endl;
   (*m_logStream) << "  Log File            : " << logFilePath << std::endl;
 
-  (*m_logStream) << "---------------------------------------------------------------"
-                 << std::endl;
+  (*m_logStream)
+      << "---------------------------------------------------------------"
+      << std::endl;
 
   // success!
   return 0;
 
- DISPATCHER_ERROR:
- SIGACTION_ERROR:
+DISPATCHER_ERROR:
+SIGACTION_ERROR:
   m_link.close();
 
- LINK_INIT_ERROR:
+LINK_INIT_ERROR:
   delete m_logStream;
   m_logStream = 0;
 
- CREATE_LOG_STREAM_ERROR:
- LOG_FILE_OPEN_ERROR:
- MKDIRP_ERROR:
- COPY_PERMISSIONS_ERROR:
+CREATE_LOG_STREAM_ERROR:
+LOG_FILE_OPEN_ERROR:
+MKDIRP_ERROR:
+COPY_PERMISSIONS_ERROR:
   return retVal;
 }
 
@@ -933,10 +857,7 @@ int ShMemBCastManager::onRead(void) {
   pid_t pid;
   uid_t uid;
   gid_t gid;
-  if (0 != UnixSocketUtil::getCredentials(&pid,
-                                                 &uid,
-                                                 &gid,
-                                                 clientFd)) {
+  if (0 != UnixSocketUtil::getCredentials(&pid, &uid, &gid, clientFd)) {
     printLogPrefix();
     (*m_logStream) << "Failed to get client credentials. Dropping connection"
                    << std::endl;
@@ -944,8 +865,8 @@ int ShMemBCastManager::onRead(void) {
   }
 
   // get the passwd object for this client
-  struct passwd* userDetails = ::getpwuid(uid);
-  struct group* groupDetails = ::getgrgid(gid);
+  struct passwd *userDetails = ::getpwuid(uid);
+  struct group *groupDetails = ::getgrgid(gid);
 
   if ((m_permittedUIDSet.end() == m_permittedUIDSet.find(uid)) &&
       (m_permittedGIDSet.end() == m_permittedGIDSet.find(gid))) {
@@ -954,39 +875,31 @@ int ShMemBCastManager::onRead(void) {
 
     // log rejection
     printLogPrefix();
-    (*m_logStream) << "Rejected connection from Process "
-                   << pid
+    (*m_logStream) << "Rejected connection from Process " << pid
                    << ", running under user "
-                   << ((0 == userDetails) ? ("<unknown>") : (userDetails->pw_name))
-                   << " ("
-                   << uid
-                   << ") and group "
-                   << ((0 == groupDetails) ? ("<unknown>") : (groupDetails->gr_name))
-                   << " ("
-                   << gid
-                   << ")"
-                   << std::endl;
+                   << ((0 == userDetails) ? ("<unknown>")
+                                          : (userDetails->pw_name))
+                   << " (" << uid << ") and group "
+                   << ((0 == groupDetails) ? ("<unknown>")
+                                           : (groupDetails->gr_name))
+                   << " (" << gid << ")" << std::endl;
 
     return 0;
   }
 
   // log acceptance
   printLogPrefix();
-  (*m_logStream) << "Accepted connection from Process "
-                 << pid
+  (*m_logStream) << "Accepted connection from Process " << pid
                  << ", running under user "
-                 << ((0 == userDetails) ? ("<unknown>") : (userDetails->pw_name))
-                 << " ("
-                 << uid
-                 << ") and group "
-                 << ((0 == groupDetails) ? ("<unknown>") : (groupDetails->gr_name))
-                 << " ("
-                 << gid
-                 << ")"
-                 << std::endl;
+                 << ((0 == userDetails) ? ("<unknown>")
+                                        : (userDetails->pw_name))
+                 << " (" << uid << ") and group "
+                 << ((0 == groupDetails) ? ("<unknown>")
+                                         : (groupDetails->gr_name))
+                 << " (" << gid << ")" << std::endl;
 
   // add client to dispatcher to handle subscription
-  Client* client = new Client(clientFd, pid, this);
+  Client *client = new Client(clientFd, pid, this);
   m_dispatcher.addChannel(client, DispatcherBase::ON_READ);
 
   return 0;

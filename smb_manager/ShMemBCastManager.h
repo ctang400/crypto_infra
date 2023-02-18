@@ -4,8 +4,6 @@
 /***
  * @file ShMemBCastManager.h
  *
- * @author Ram Raghunathan (rraghunathan@tower-research.com)
- *
  * @brief
  * This class provides the bulk of the implementation for the
  * ShMemBCast Manager daemon, which creates and manages the shared
@@ -36,16 +34,16 @@
  * name as an existing channel creates a brand new channel.
  */
 
-#include <core/link/IPCAddress.h>
 #include <core/dispatcher/ChannelBase.h>
 #include <core/dispatcher/DispatcherBase.h>
 #include <core/dispatcher/SelectDispatcher.h>
+#include <core/link/IPCAddress.h>
 #include <core/link/ShMemBCastProtocol.h>
 #include <core/link/UnixLink.h>
 #include <core/link/UnixServerLink.h>
 
-#include <core/utils/FileUtil.h>
 #include <core/link/UnixSocketUtil.h>
+#include <core/utils/FileUtil.h>
 
 #include <fstream>
 #include <ios>
@@ -67,7 +65,7 @@
 #include <unistd.h>
 
 class ShMemBCastManager : public ReadCB {
- private:
+private:
   /***
    * typedef ShMemBCastProtocol to keep from having absurdly long
    * identifiers.
@@ -80,7 +78,7 @@ class ShMemBCastManager : public ReadCB {
    * dispatcher.
    */
   class Client : public ReadCB {
-   private:
+  private:
     /***
      * Information about a subscription
      *
@@ -90,7 +88,7 @@ class ShMemBCastManager : public ReadCB {
      * a writer
      */
     struct Subscription {
-      const char* m_channelName;
+      const char *m_channelName;
       bool m_writer;
     };
 
@@ -111,7 +109,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::EventModeRequest* request);
+    int handleMessage(Protocol::EventModeRequest *request);
 
     /***
      * Handles a No Event Mode Request
@@ -120,7 +118,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::NoEventModeRequest* request);
+    int handleMessage(Protocol::NoEventModeRequest *request);
 
     /***
      * Handles a Writer Subscribe Request
@@ -129,7 +127,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::WriterSubscribeRequest* request);
+    int handleMessage(Protocol::WriterSubscribeRequest *request);
 
     /***
      * Handles a Reader Subscribe Request
@@ -138,7 +136,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::ReaderSubscribeRequest* request);
+    int handleMessage(Protocol::ReaderSubscribeRequest *request);
 
     /***
      * Handles a Writer Unsubscribe Request
@@ -147,7 +145,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::WriterUnsubscribeRequest* request);
+    int handleMessage(Protocol::WriterUnsubscribeRequest *request);
 
     /***
      * Handles a Reader Unsubscribe Request
@@ -156,7 +154,7 @@ class ShMemBCastManager : public ReadCB {
      *
      * @return 0 on success, non-zero on fatal error
      */
-    int handleMessage(Protocol::ReaderUnsubscribeRequest* request);
+    int handleMessage(Protocol::ReaderUnsubscribeRequest *request);
 
     /***
      * Disconnects this client, unsubscribing from all subscriptions
@@ -167,11 +165,11 @@ class ShMemBCastManager : public ReadCB {
 
     UnixLink m_link;
     std::list<Subscription> m_subscriptions;
-    ShMemBCastManager * const m_manager;
+    ShMemBCastManager *const m_manager;
     const pid_t m_pid;
     bool m_eventMode;
 
-   public:
+  public:
     /***
      * Creates the client using the specified file descriptor.
      *
@@ -180,7 +178,7 @@ class ShMemBCastManager : public ReadCB {
      * @param manager The manager that this client is associated
      * with.
      */
-    Client(int fd, const pid_t pid, ShMemBCastManager* manager);
+    Client(int fd, const pid_t pid, ShMemBCastManager *manager);
 
     /***
      * sends a channel subscription event to the client, if it is an
@@ -189,7 +187,7 @@ class ShMemBCastManager : public ReadCB {
      * @param numReaders number of readers
      * @param channelName name of channel
      */
-    void sendChannelSubscriptionEvent(uint16_t numReaders, const char* channel);
+    void sendChannelSubscriptionEvent(uint16_t numReaders, const char *channel);
 
     // ReadCB Functions
     int onRead(void);
@@ -214,9 +212,9 @@ class ShMemBCastManager : public ReadCB {
    * associated with this channel
    */
   struct Channel {
-    std::list<Client*> m_readers;
-    Client* m_writer;
-    const char* m_name;
+    std::list<Client *> m_readers;
+    Client *m_writer;
+    const char *m_name;
     int m_fd;
   };
 
@@ -231,9 +229,7 @@ class ShMemBCastManager : public ReadCB {
    *
    * @return the Channel on success, 0 on error
    */
-  Channel* subscribe(Client* client,
-                     const char* channelName,
-                     bool writer,
+  Channel *subscribe(Client *client, const char *channelName, bool writer,
                      uint32_t requestedSize);
 
   /***
@@ -251,7 +247,7 @@ class ShMemBCastManager : public ReadCB {
    *
    * @return 0 on success, non-zero on error
    */
-  int unsubscribe(Client* client, const char* channelName, bool writer);
+  int unsubscribe(Client *client, const char *channelName, bool writer);
 
   /***
    * Prints the prefix for a log message
@@ -259,8 +255,8 @@ class ShMemBCastManager : public ReadCB {
   void printLogPrefix(void);
 
   static const size_t LOG_TIME_LENGTH = 20;
-  static const char * const LOG_TIME_FORMAT;
-  static const char * const LOG_TIME_ERROR;
+  static const char *const LOG_TIME_FORMAT;
+  static const char *const LOG_TIME_ERROR;
 
   UnixServerLink m_link;
   SelectDispatcher m_dispatcher;
@@ -269,9 +265,9 @@ class ShMemBCastManager : public ReadCB {
   std::set<gid_t> m_permittedGIDSet;
   std::ofstream m_logFile;
   uint64_t m_defaultBufferSize;
-  std::ostream* m_logStream;
+  std::ostream *m_logStream;
 
- public:
+public:
   /***
    * Create an instance of ShMemBCastManager which creates buffers of
    * 'bufferSize' bytes. Please be sure to call init() to complete
@@ -304,11 +300,9 @@ class ShMemBCastManager : public ReadCB {
    *
    * @return 0 on success, non-zero on error
    */
-  int init(const std::string& vlan,
-           const std::set<uid_t>& permittedUIDSet,
-           const std::set<gid_t>& permittedGIDSet,
-           uint64_t defaultBufferSize,
-           const std::string& logFilePath);
+  int init(const std::string &vlan, const std::set<uid_t> &permittedUIDSet,
+           const std::set<gid_t> &permittedGIDSet, uint64_t defaultBufferSize,
+           const std::string &logFilePath);
 
   /***
    * Runs the Manager. Call init() before calling this function. This
@@ -328,93 +322,63 @@ class ShMemBCastManager : public ReadCB {
 };
 
 // inline and template functions
-inline
-ShMemBCastManager::Client::Client(int fd,
-                                  pid_t pid,
-                                  ShMemBCastManager* manager)
-    : m_link(fd),
-      m_subscriptions(),
-      m_manager(manager),
-      m_pid(pid),
-      m_eventMode(false) { }
+inline ShMemBCastManager::Client::Client(int fd, pid_t pid,
+                                         ShMemBCastManager *manager)
+    : m_link(fd), m_subscriptions(), m_manager(manager), m_pid(pid),
+      m_eventMode(false) {}
 
-inline
-int ShMemBCastManager::Client::readFileDescriptor(void) const {
+inline int ShMemBCastManager::Client::readFileDescriptor(void) const {
   return m_link.fileDescriptor();
 }
 
-inline
-int ShMemBCastManager::Client::onClose(void) {
+inline int ShMemBCastManager::Client::onClose(void) {
   return TTECH_DELETE_CHAN;
 }
 
-inline
-int ShMemBCastManager::Client::mode(void) const {
+inline int ShMemBCastManager::Client::mode(void) const {
   return ChannelBase::SELECT_MODE;
 }
 
-inline
-void ShMemBCastManager::printLogPrefix(void) {
+inline void ShMemBCastManager::printLogPrefix(void) {
   // static buffer to remove allocation time
   static char timeString[LOG_TIME_LENGTH];
 
   // get time
   time_t rawTime = ::time(0);
-  struct tm* localTime = ::localtime(&rawTime);
-  if (0 == ::strftime(timeString,
-                      sizeof(timeString),
-                      LOG_TIME_FORMAT,
-                      localTime)) {
-    ::strncpy(timeString,
-              LOG_TIME_ERROR,
-              LOG_TIME_LENGTH - 1);
+  struct tm *localTime = ::localtime(&rawTime);
+  if (0 ==
+      ::strftime(timeString, sizeof(timeString), LOG_TIME_FORMAT, localTime)) {
+    ::strncpy(timeString, LOG_TIME_ERROR, LOG_TIME_LENGTH - 1);
     timeString[LOG_TIME_LENGTH - 1] = '\0';
   }
 
   // skip the std::endl as this is the beginning of a line
-  (*m_logStream) << timeString
-                 << ": ";
+  (*m_logStream) << timeString << ": ";
 }
 
-inline
-ShMemBCastManager::ShMemBCastManager(void)
-    : m_link(),
-      m_dispatcher(),
-      m_channels(),
-      m_permittedUIDSet(),
-      m_permittedGIDSet(),
-      m_logFile(),
-      m_defaultBufferSize(0),
-      m_logStream(0) { }
-
-inline
-ShMemBCastManager::~ShMemBCastManager(void) {
-  delete m_logStream;
+inline ShMemBCastManager::ShMemBCastManager(void)
+    : m_link(), m_dispatcher(), m_channels(), m_permittedUIDSet(),
+      m_permittedGIDSet(), m_logFile(), m_defaultBufferSize(0), m_logStream(0) {
 }
 
-inline
-void ShMemBCastManager::run(void) {
-  m_dispatcher.run();
-}
+inline ShMemBCastManager::~ShMemBCastManager(void) { delete m_logStream; }
 
-inline
-int ShMemBCastManager::readFileDescriptor(void) const {
+inline void ShMemBCastManager::run(void) { m_dispatcher.run(); }
+
+inline int ShMemBCastManager::readFileDescriptor(void) const {
   return m_link.fileDescriptor();
 }
 
-inline
-int ShMemBCastManager::onClose(void) {
+inline int ShMemBCastManager::onClose(void) {
   // log
   printLogPrefix();
-  (*m_logStream) << "Manager Ending"
-                 << std::endl;
+  (*m_logStream) << "Manager Ending" << std::endl;
 
   return 0;
 }
 
-inline
-int ShMemBCastManager::mode(void) const {
+inline int ShMemBCastManager::mode(void) const {
   return ChannelBase::SELECT_MODE;
 }
 
-#endif  // DAEMONS_SHMEMBCASTMANAGER_H_
+#endif // DAEMONS_SHMEMBCASTMANAGER_H_
