@@ -421,6 +421,9 @@ int ShMemBCastManager::Client::onRead(void) {
   bytesRead = m_link.read(buffer, Protocol::Constants::MAX_MESSAGE_SIZE);
   if (static_cast<ssize_t>(sizeof(Protocol::Header)) > bytesRead) {
     // Must have at least a header...
+    m_manager->printLogPrefix();
+    (*(m_manager->m_logStream))
+      << "Process " << m_pid << " read error" << std::endl;
     goto READ_ERROR;
   }
 
@@ -428,11 +431,17 @@ int ShMemBCastManager::Client::onRead(void) {
   header = reinterpret_cast<Protocol::Header *>(buffer);
   if (Protocol::VERSION != header->m_version) {
     // unsupported version
+    m_manager->printLogPrefix();
+    (*(m_manager->m_logStream))
+      << "Process " << m_pid << " version error" << std::endl;
     goto VERSION_ERROR;
   }
 
   // verify request size matches up
   if (static_cast<ssize_t>(header->m_size) != bytesRead) {
+    m_manager->printLogPrefix();
+    (*(m_manager->m_logStream))
+      << "Process " << m_pid << " msg size error" << std::endl;
     goto MESSAGE_SIZE_ERROR;
   }
 
@@ -469,6 +478,8 @@ int ShMemBCastManager::Client::onRead(void) {
   } break;
 
   default: {
+    (*(m_manager->m_logStream))
+      << "Process " << m_pid << " unsupported msg" << std::endl;
     goto UNSUPPORTED_MESSAGE_ERROR;
   }
   }

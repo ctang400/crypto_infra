@@ -34,19 +34,30 @@ ADD_SUBDIRECTORY("${PROJECT_SOURCE_DIR}/libnano")
 find_package(Protobuf REQUIRED)
 
 file(GLOB ProtoFiles "${PROJECT_SOURCE_DIR}/libnano/core/proto/*.proto")
-#SET(ProtoOutputDir "${PROJECT_SOURCE_DIR}/libnano/core/proto")
-#include_directories("${PROJECT_SOURCE_DIR}/libnano/external/protobuf/src")
-#message("${Protobuf_INCLUDE_DIRS}")
 PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
+include_directories(${CMAKE_BINARY_DIR})
 message("${ProtoSources}")
-#EXECUTE_PROCESS(COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}  --cpp_out=${ProtoOutputDir} ${ProtoFiles}
-#    RESULT_VARIABLE rv)
-#message("protoc return:${PROTOBUF_PROTOC_EXECUTABLE}")
+
+include(FetchContent)
+
+FetchContent_Declare(
+  simdjson
+  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+  GIT_TAG  tags/v0.9.6
+  GIT_SHALLOW TRUE)
+
+FetchContent_MakeAvailable(simdjson)
+
+find_package(OpenSSL REQUIRED)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+
 FILE(GLOB SRC
         ${PROJECT_SOURCE_DIR}/libnano/core/*.h
         ${PROJECT_SOURCE_DIR}/libnano/core/*.cpp
         ${PROJECT_SOURCE_DIR}/libnano/core/**/*.h
         ${PROJECT_SOURCE_DIR}/libnano/core/**/*.cpp
+        ${PROJECT_SOURCE_DIR}/libnano/core/utils/llhttp/*.c
+        ${PROJECT_SOURCE_DIR}/libnano/core/utils/llhttp/*.h
         #${PROJECT_SOURCE_DIR}/libnano/core/proto/*.pb.h
         #${PROJECT_SOURCE_DIR}/libnano/core/proto/*.pb.cpp
     )
@@ -59,6 +70,7 @@ FILE(GLOB SRC
     TARGET_LINK_LIBRARIES(libnano PUBLIC
             ${Protobuf_LIBRARIES}
             uriparser
+            OpenSSL::Crypto
         )
 
 ############### APPLICATION ##################
@@ -83,7 +95,8 @@ MACRO(ADD_APPLICATION APP_NAME)
         TARGET_LINK_LIBRARIES(${TARGET_NAME}
             # internal lib
             libnano
-            
+            OpenSSL::SSL
+            OpenSSL::Crypto
             uriparser
         )
   
@@ -97,3 +110,4 @@ ENDMACRO()
 
 ADD_APPLICATION(smb_manager)
 ADD_APPLICATION(binanceTS)
+ADD_APPLICATION(api_test)
